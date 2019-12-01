@@ -12,18 +12,12 @@ namespace AoC2019.Solutions
 
         public static string B(string input)
         {
-            return input.Split('\n').Select(int.Parse).Select(x => x / 3 - 2).Select(FuelCounter).Sum().ToString();
+            return input.Split('\n').Select(x => int.Parse(x) / 3 - 2).Select(Fuel).Sum().ToString();
         }
 
-        private static int FuelCounter(int moduleWeight)
+        private static int Fuel(int weight)
         {
-            var result = 0;
-            while (moduleWeight > 0)
-            {
-                result += moduleWeight;
-                moduleWeight = moduleWeight / 3 - 2;
-            }
-            return result;
+            return weight <= 0 ? 0 : Fuel(weight / 3 - 2) + weight;
         }
     }
 }
