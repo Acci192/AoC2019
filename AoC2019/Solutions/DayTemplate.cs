@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace AoC2019.Solutions
 {
-    public class Day5
+    public class DayTemplate
     {
         public static string A(string input)
         {

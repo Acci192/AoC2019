@@ -10,13 +10,19 @@ namespace AoC2019.Solutions
     {
         public static string A(string input)
         {
-            var rows = input.Split('\n');
+            var program = input.Split(',').Select(int.Parse).ToList();
+
+            var computer = new IntCodeComputer(program);
+            computer.Run(1);
             return string.Empty;
         }
 
         public static string B(string input)
         {
-            var rows = input.Split('\n');
+            var program = input.Split(',').Select(int.Parse).ToList();
+
+            var computer = new IntCodeComputer(program);
+            computer.Run(5);
             return string.Empty;
         }
     }
