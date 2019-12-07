@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace AoC2019.Solutions
 {
@@ -8,7 +9,7 @@ namespace AoC2019.Solutions
         {
             var program = input.Split(',').Select(int.Parse).ToList();
 
-            var computer = new IntCodeComputer(program, 4);
+            var computer = new IntCodeComputer(program);
             computer.SetValueAt(1, 12);
             computer.SetValueAt(2, 2);
             computer.Run();

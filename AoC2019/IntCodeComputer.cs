@@ -1,26 +1,38 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace AoC2019
 {
     public class IntCodeComputer
     {
-        public List<int> Inputs { get; set; }
-        private int inputCounter = 0;
+        public BlockingCollection<int> InputQueue { get; set; }
+        public BlockingCollection<int> OutputQueue { get; set; }
         public List<int> Memory { get; set; }
-        public int ProgramCounter { get; set; } = 0;
-        public int StaticIncrement { get; set; }
+        public int PC { get; set; } = 0;
+        public string Name { get; set; }
 
-        public IntCodeComputer(List<int> program, int staticIncrement = 0)
+        public IntCodeComputer(List<int> program, BlockingCollection<int> inputQueue = null, BlockingCollection<int> outputQueue = null)
         {
             Memory = new List<int>(program);
-            StaticIncrement = staticIncrement;
+            InputQueue = inputQueue;
+            OutputQueue = outputQueue;
         }
 
-        public int GetValueAt(int index)
+        public int GetValueAt(int index, int mode = 1)
         {
-            return Memory[index];
+            switch (mode)
+            {
+                case 0:
+                    return Memory[Memory[index]];
+                case 1:
+                    return Memory[index];
+                default:
+                    throw new Exception("Invalid Argument Mode");
+            }
         }
 
         public void SetValueAt(int index, int value)
@@ -28,52 +40,53 @@ namespace AoC2019
             Memory[index] = value;
         }
 
-        public void Run(params int[] inputs)
+        public void Run()
         {
-            Inputs = inputs.ToList();
-            while (ExecuteOperation() || ProgramCounter >= Memory.Count) ;
+            while (ExecuteOperation()) ;
         }
 
         private bool ExecuteOperation()
         {
-            var opCode = Memory[ProgramCounter] % 100;
-            var arguments = ParseArgument(opCode);
+            var opCode = Memory[PC] % 100;
+            var modeOne = (Memory[PC] / 100) % 10;
+            var modeTwo = (Memory[PC] / 1000) % 10;
+            var modeThree = (Memory[PC] / 10000) % 10;
             switch (opCode)
             {
                 case 1:
-                    Memory[GetValueFromArgument(arguments[2], true)] = GetValueFromArgument(arguments[0]) + GetValueFromArgument(arguments[1]);
+                    Memory[GetValueAt(PC + 3)] = GetValueAt(PC+1, modeOne) + GetValueAt(PC + 2, modeTwo);
                     IncrementProgramCounter(4);
                     break;
                 case 2:
-                    Memory[GetValueFromArgument(arguments[2], true)] = GetValueFromArgument(arguments[0]) * GetValueFromArgument(arguments[1]);
+                    Memory[GetValueAt(PC + 3)] = GetValueAt(PC + 1, modeOne) * GetValueAt(PC + 2, modeTwo);
                     IncrementProgramCounter(4);
                     break;
                 case 3:
-                    Memory[GetValueFromArgument(arguments[0], true)] = GetInputValue();
+                    Memory[GetValueAt(PC+1)] = InputQueue.Take();
                     IncrementProgramCounter(2);
                     break;
                 case 4:
-                    Console.WriteLine(GetValueFromArgument(arguments[0]));
+                    OutputQueue.Add(GetValueAt(PC + 1, modeOne));
                     IncrementProgramCounter(2);
                     break;
                 case 5:
-                    if(GetValueFromArgument(arguments[0]) == 0)
+                    if(GetValueAt(PC + 1, modeOne) == 0)
                         IncrementProgramCounter(3);
                     else
-                        ProgramCounter = GetValueFromArgument(arguments[1]);
+                        PC = GetValueAt(PC + 2, modeTwo);
                     break;
                 case 6:
-                    if (GetValueFromArgument(arguments[0]) != 0)
+                    if (GetValueAt(PC + 1, modeOne) != 0)
                         IncrementProgramCounter(3);
                     else
-                        ProgramCounter = GetValueFromArgument(arguments[1]);
+                        PC = GetValueAt(PC + 2, modeTwo);
                     break;
                 case 7:
-                    Memory[GetValueFromArgument(arguments[2], true)] = GetValueFromArgument(arguments[0]) < GetValueFromArgument(arguments[1]) ? 1 : 0;
+                    Memory[GetValueAt(PC + 3)] = GetValueAt(PC + 1, modeOne) < GetValueAt(PC + 2, modeTwo) ? 1 : 0;
                     IncrementProgramCounter(4);
                     break;
                 case 8:
-                    Memory[GetValueFromArgument(arguments[2], true)] = GetValueFromArgument(arguments[0]) == GetValueFromArgument(arguments[1]) ? 1 : 0;
+                    Memory[GetValueAt(PC + 3)] = GetValueAt(PC + 1, modeOne) == GetValueAt(PC + 2, modeTwo) ? 1 : 0;
                     IncrementProgramCounter(4);
                     break;
                 case 99:
@@ -87,76 +100,7 @@ namespace AoC2019
 
         private void IncrementProgramCounter(int increment)
         {
-            ProgramCounter = StaticIncrement == 0 ? ProgramCounter + increment : ProgramCounter + StaticIncrement;
-        }
-
-        private List<Argument> ParseArgument(int opCode)
-        {
-            var information = new List<Argument>();
-            var fullOpCode = Memory[ProgramCounter];
-            var numOfArguments = 0;
-            switch (opCode)
-            {
-                case 99:
-                    break;
-                case 3:
-                case 4:
-                    numOfArguments = 1;
-                    break;
-                case 5:
-                case 6:
-                    numOfArguments = 2;
-                    break;
-                case 1:
-                case 2:
-                case 7:
-                case 8:
-                    numOfArguments = 3;
-                    break;
-            }
-
-            var argumentModeHelper = 100;
-            for(var i = 0; i < numOfArguments; i++)
-            {
-                var argumentMode = (fullOpCode / argumentModeHelper) % 10;
-                information.Add(new Argument { Mode = argumentMode, Value = GetValueAt(ProgramCounter + i + 1) });
-                argumentModeHelper *= 10;
-            }
-            return information;
-        }
-
-        private int GetValueFromArgument(Argument argument, bool MemoryPosition = false)
-        {
-            if (MemoryPosition)
-                return argument.Value;
-            switch (argument.Mode)
-            {
-                case 0:
-                    return Memory[argument.Value];
-                case 1:
-                    return argument.Value;
-                default:
-                    throw new Exception("Invalid Argument Mode");
-            }
-        }
-
-        private int GetInputValue()
-        {
-            if (Inputs.Count > inputCounter)
-                return Inputs[inputCounter++];
-            else
-            {
-                var userInput = Console.ReadLine();
-                if (int.TryParse(userInput, out var result))
-                    return result;
-                throw new Exception($"Input needs to be an integer. Input from console was '{userInput}'");
-            }
-        }
-
-        private class Argument
-        {
-            public int Mode { get; set; }
-            public int Value { get; set; }
+            PC = PC + increment;
         }
     }
 }
