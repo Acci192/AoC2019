@@ -13,22 +13,20 @@ namespace AoC2019.Solutions
         {
             var program = input.Split(',').Select(int.Parse).ToList();
 
-            var inputQueue = new BlockingCollection<int> { 1 };
-            var outputQueue = new BlockingCollection<int>();
-            var computer = new IntCodeComputer(program, inputQueue, outputQueue);
+            var computer = new IntCodeComputer(program);
+            computer.AddToInput(1);
             computer.Run();
             
-            return outputQueue.Last().ToString();
+            return computer.OutputQueue.Last().ToString();
         }
 
         public static string B(string input)
         {
             var program = input.Split(',').Select(int.Parse).ToList();
-            var inputQueue = new BlockingCollection<int> { 5 };
-            var outputQueue = new BlockingCollection<int>();
-            var computer = new IntCodeComputer(program, inputQueue, outputQueue);
+            var computer = new IntCodeComputer(program);
+            computer.AddToInput(5);
             computer.Run();
-            return outputQueue.Take().ToString();
+            return computer.OutputQueue.Take().ToString();
         }
     }
 }

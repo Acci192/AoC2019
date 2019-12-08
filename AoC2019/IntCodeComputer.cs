@@ -9,17 +9,32 @@ namespace AoC2019
 {
     public class IntCodeComputer
     {
-        public BlockingCollection<int> InputQueue { get; set; }
-        public BlockingCollection<int> OutputQueue { get; set; }
-        public List<int> Memory { get; set; }
-        public int PC { get; set; } = 0;
-        public string Name { get; set; }
+        private BlockingCollection<int> _inputQueue;
+        public BlockingCollection<int> InputQueue
+        {
+            get => _inputQueue;
+            set
+            {
+                _inputQueue?.Dispose();
+                _inputQueue = value;
+            }
+        }
+        public BlockingCollection<int> OutputQueue { get; } = new BlockingCollection<int>();
+        public List<int> Memory { get; }
+        private int PC { get; set; } = 0;
 
-        public IntCodeComputer(List<int> program, BlockingCollection<int> inputQueue = null, BlockingCollection<int> outputQueue = null)
+        public IntCodeComputer(List<int> program)
         {
             Memory = new List<int>(program);
-            InputQueue = inputQueue;
-            OutputQueue = outputQueue;
+            InputQueue = new BlockingCollection<int>();
+        }
+
+        public void AddToInput(params int[] inputs)
+        {
+            foreach(var i in inputs)
+            {
+                InputQueue.Add(i);
+            }
         }
 
         public int GetValueAt(int index, int mode = 1)

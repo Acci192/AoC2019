@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 
@@ -10,137 +9,88 @@ namespace AoC2019.Solutions
         public static string A(string input)
         {
             var program = input.Split(',').Select(int.Parse).ToList();
-
             var max = 0;
+            var settings = UniquePhaseSettings(0, 4);
 
-            for (var aPhase = 0; aPhase < 5; aPhase++)
+            foreach (var setting in settings)
             {
-                for (var bPhase = 0; bPhase < 5; bPhase++)
-                {
-                    for (var cPhase = 0; cPhase < 5; cPhase++)
-                    {
-                        for (var dPhase = 0; dPhase < 5; dPhase++)
-                        {
-                            for (var ePhase = 0; ePhase < 5; ePhase++)
-                            {
-                                var uniquePhaseSetting = new HashSet<int>
-                                {
-                                    aPhase,
-                                    bPhase,
-                                    cPhase,
-                                    dPhase,
-                                    ePhase
-                                };
-                                if (uniquePhaseSetting.Count != 5)
-                                    continue;
+                var computerA = new IntCodeComputer(program);
+                computerA.AddToInput(setting[0], 0);
+                computerA.Run();
 
-                                var outputA = new BlockingCollection<int> { bPhase };
+                var computerB = new IntCodeComputer(program);
+                computerB.AddToInput(setting[1], computerA.OutputQueue.Take());
+                computerB.Run();
 
-                                var outputB = new BlockingCollection<int> { cPhase };
+                var computerC = new IntCodeComputer(program);
+                computerC.AddToInput(setting[2], computerB.OutputQueue.Take());
+                computerC.Run();
 
-                                var outputC = new BlockingCollection<int> { dPhase };
+                var computerD = new IntCodeComputer(program);
+                computerD.AddToInput(setting[3], computerC.OutputQueue.Take());
+                computerD.Run();
 
-                                var outputD = new BlockingCollection<int> { ePhase };
+                var computerE = new IntCodeComputer(program);
+                computerE.AddToInput(setting[4], computerD.OutputQueue.Take());
+                computerE.Run();
 
-                                var outputE = new BlockingCollection<int> { aPhase, 0 };
-
-                                var a = new IntCodeComputer(program, outputE, outputA);
-                                var b = new IntCodeComputer(program, outputA, outputB);
-                                var c = new IntCodeComputer(program, outputB, outputC);
-                                var d = new IntCodeComputer(program, outputC, outputD);
-                                var e = new IntCodeComputer(program, outputD, outputE);
-
-                                var threadA = new Thread(new ThreadStart(a.Run));
-                                var threadB = new Thread(new ThreadStart(b.Run));
-                                var threadC = new Thread(new ThreadStart(c.Run));
-                                var threadD = new Thread(new ThreadStart(d.Run));
-                                var threadE = new Thread(new ThreadStart(e.Run));
-
-                                threadA.Start();
-                                threadB.Start();
-                                threadC.Start();
-                                threadD.Start();
-                                threadE.Start();
-
-                                threadE.Join();
-                                var value = outputE.Take();
-                                if (value > max)
-                                {
-                                    max = value;
-                                }
-                            }
-                        }
-                    }
-                }
+                var value = computerE.OutputQueue.Take();
+                if (value > max)
+                    max = value;
             }
-
+            
             return max.ToString();
         }
 
         public static string B(string input)
         {
             var program = input.Split(',').Select(int.Parse).ToList();
-
             var max = 0;
+            var settings = UniquePhaseSettings(5, 9);
 
-            for (var aPhase = 5; aPhase < 10; aPhase++)
+            foreach(var setting in settings)
             {
-                for (var bPhase = 5; bPhase < 10; bPhase++)
-                {
-                    for (var cPhase = 5; cPhase < 10; cPhase++)
-                    {
-                        for (var dPhase = 5; dPhase < 10; dPhase++)
-                        {
-                            for (var ePhase = 5; ePhase < 10; ePhase++)
-                            {
-                                var uniquePhaseSetting = new HashSet<int>
-                                {
-                                    aPhase,
-                                    bPhase,
-                                    cPhase,
-                                    dPhase,
-                                    ePhase
-                                };
-                                if (uniquePhaseSetting.Count != 5)
-                                    continue;
+                var computerA = new IntCodeComputer(program);
+                var computerB = new IntCodeComputer(program) { InputQueue = computerA.OutputQueue };
+                var computerC = new IntCodeComputer(program) { InputQueue = computerB.OutputQueue };
+                var computerD = new IntCodeComputer(program) { InputQueue = computerC.OutputQueue };
+                var computerE = new IntCodeComputer(program) { InputQueue = computerD.OutputQueue };
+                computerA.InputQueue = computerE.OutputQueue;
+                computerA.AddToInput(setting[0], 0);
+                computerB.AddToInput(setting[1]);
+                computerC.AddToInput(setting[2]);
+                computerD.AddToInput(setting[3]);
+                computerE.AddToInput(setting[4]);
 
-                                var outputA = new BlockingCollection<int> { bPhase };
-                                var outputB = new BlockingCollection<int> { cPhase };
-                                var outputC = new BlockingCollection<int> { dPhase };
-                                var outputD = new BlockingCollection<int> { ePhase };
-                                var outputE = new BlockingCollection<int> { aPhase, 0};
-
-                                var a = new IntCodeComputer(program, outputE, outputA);
-                                var b = new IntCodeComputer(program, outputA, outputB);
-                                var c = new IntCodeComputer(program, outputB, outputC);
-                                var d = new IntCodeComputer(program, outputC, outputD);
-                                var e = new IntCodeComputer(program, outputD, outputE);
-
-                                var threadA = new Thread(new ThreadStart(a.Run));
-                                var threadB = new Thread(new ThreadStart(b.Run));
-                                var threadC = new Thread(new ThreadStart(c.Run));
-                                var threadD = new Thread(new ThreadStart(d.Run));
-                                var threadE = new Thread(new ThreadStart(e.Run));
-
-                                threadA.Start();
-                                threadB.Start();
-                                threadC.Start();
-                                threadD.Start();
-                                threadE.Start();
-
-                                threadE.Join();
-                                var value = outputE.Take();
-                                if (value > max)
-                                {
-                                    max = value;
-                                }
-                            }
-                        }
-                    }
-                }
+                new Thread(f => { computerA.Run(); }).Start();
+                new Thread(f => { computerB.Run(); }).Start();
+                new Thread(f => { computerC.Run(); }).Start();
+                new Thread(f => { computerD.Run(); }).Start();
+                var threadE = new Thread(f => { computerE.Run(); });
+                threadE.Start();
+                threadE.Join();
+                var value = computerE.OutputQueue.Take();
+                if (value > max)
+                    max = value;
             }
             
             return max.ToString();
+        }
+
+        private static List<int[]> UniquePhaseSettings(int low, int high)
+        {
+            var settings = new List<int[]>();
+            for (var aPhase = low; aPhase <= high; aPhase++)
+            for (var bPhase = low; bPhase <= high; bPhase++)
+            for (var cPhase = low; cPhase <= high; cPhase++)
+            for (var dPhase = low; dPhase <= high; dPhase++)
+            for (var ePhase = low; ePhase <= high; ePhase++)
+            {
+                var uniquePhaseSetting = new HashSet<int> { aPhase, bPhase, cPhase, dPhase, ePhase };
+                if (uniquePhaseSetting.Count == 5)
+                    settings.Add(new[] { aPhase, bPhase, cPhase, dPhase, ePhase });
+            }
+            return settings;
         }
     }
 }
