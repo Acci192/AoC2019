@@ -7,7 +7,7 @@ namespace AoC2019.Solutions
     {
         public static string A(string input)
         {
-            var program = input.Split(',').Select(int.Parse).ToList();
+            var program = input.Split(',').Select(long.Parse).ToList();
 
             var computer = new IntCodeComputer(program);
             computer.SetValueAt(1, 12);
@@ -18,14 +18,14 @@ namespace AoC2019.Solutions
 
         public static string B(string input)
         {
-            var program = input.Split(',').Select(int.Parse).ToList();
+            var program = input.Split(',').Select(long.Parse).ToList();
 
             var range = Enumerable.Range(0, 99);
             foreach(var noun in range)
             {
                 foreach(var verb in range)
                 {
-                    var computer = new IntCodeComputer(program);
+                    var computer = new IntCodeComputer(program, 0);
                     computer.SetValueAt(1, noun);
                     computer.SetValueAt(2, verb);
                     computer.Run();

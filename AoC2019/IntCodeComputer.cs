@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,8 +10,8 @@ namespace AoC2019
 {
     public class IntCodeComputer
     {
-        private BlockingCollection<int> _inputQueue;
-        public BlockingCollection<int> InputQueue
+        private BlockingCollection<long> _inputQueue;
+        public BlockingCollection<long> InputQueue
         {
             get => _inputQueue;
             set
@@ -19,17 +20,20 @@ namespace AoC2019
                 _inputQueue = value;
             }
         }
-        public BlockingCollection<int> OutputQueue { get; } = new BlockingCollection<int>();
-        public List<int> Memory { get; }
+        public BlockingCollection<long> OutputQueue { get; } = new BlockingCollection<long>();
+        public List<long> Memory { get; }
         private int PC { get; set; } = 0;
+        private int RelativeBase { get; set; } = 0;
 
-        public IntCodeComputer(List<int> program)
+        public IntCodeComputer(List<long> program, int extraMemory = 1000000)
         {
-            Memory = new List<int>(program);
-            InputQueue = new BlockingCollection<int>();
+            Memory = new List<long>(program);
+            
+            Memory.AddRange(new long[extraMemory]);
+            InputQueue = new BlockingCollection<long>();
         }
 
-        public void AddToInput(params int[] inputs)
+        public void AddToInput(params long[] inputs)
         {
             foreach(var i in inputs)
             {
@@ -37,20 +41,28 @@ namespace AoC2019
             }
         }
 
-        public int GetValueAt(int index, int mode = 1)
+        public long GetValueAt(int memoryAddress)
+        {
+            return Memory[memoryAddress];
+        }
+
+
+        public int GetMemoryAddress(int parameter, long mode)
         {
             switch (mode)
             {
                 case 0:
-                    return Memory[Memory[index]];
+                    return (int)Memory[PC + parameter];
                 case 1:
-                    return Memory[index];
+                    return PC + parameter;
+                case 2:
+                    return (int)Memory[PC + parameter] + RelativeBase;
                 default:
                     throw new Exception("Invalid Argument Mode");
             }
         }
 
-        public void SetValueAt(int index, int value)
+        public void SetValueAt(int index, long value)
         {
             Memory[index] = value;
         }
@@ -63,59 +75,52 @@ namespace AoC2019
         private bool ExecuteOperation()
         {
             var opCode = Memory[PC] % 100;
-            var modeOne = (Memory[PC] / 100) % 10;
-            var modeTwo = (Memory[PC] / 1000) % 10;
-            var modeThree = (Memory[PC] / 10000) % 10;
+            var memoryA = GetMemoryAddress(1, (Memory[PC] / 100) % 10);
+            var memoryB = GetMemoryAddress(2, (Memory[PC] / 1000) % 10);
+            var memoryC = GetMemoryAddress(3, (Memory[PC] / 10000) % 10);
+
             switch (opCode)
             {
-                case 1:
-                    Memory[GetValueAt(PC + 3)] = GetValueAt(PC+1, modeOne) + GetValueAt(PC + 2, modeTwo);
-                    IncrementProgramCounter(4);
+                case 1: //Add: c = a + b
+                    Memory[memoryC] = GetValueAt(memoryA) + GetValueAt(memoryB);
+                    PC += 4;
                     break;
-                case 2:
-                    Memory[GetValueAt(PC + 3)] = GetValueAt(PC + 1, modeOne) * GetValueAt(PC + 2, modeTwo);
-                    IncrementProgramCounter(4);
+                case 2: //Multiply: c = a * b
+                    Memory[memoryC] = GetValueAt(memoryA) * GetValueAt(memoryB);
+                    PC += 4;
                     break;
-                case 3:
-                    Memory[GetValueAt(PC+1)] = InputQueue.Take();
-                    IncrementProgramCounter(2);
+                case 3: // Read: a = [input]
+                    Memory[memoryA] = InputQueue.Take();
+                    PC += 2;
                     break;
-                case 4:
-                    OutputQueue.Add(GetValueAt(PC + 1, modeOne));
-                    IncrementProgramCounter(2);
+                case 4: // Write: [output] = a
+                    OutputQueue.Add(GetValueAt(memoryA));
+                    PC += 2;
                     break;
-                case 5:
-                    if(GetValueAt(PC + 1, modeOne) == 0)
-                        IncrementProgramCounter(3);
-                    else
-                        PC = GetValueAt(PC + 2, modeTwo);
+                case 5: //Jump-if-true: if a != 0 ? Pc = b : Pc += 3
+                    PC = GetValueAt(memoryA) != 0 ? (int)GetValueAt(memoryB) : PC + 3;
                     break;
-                case 6:
-                    if (GetValueAt(PC + 1, modeOne) != 0)
-                        IncrementProgramCounter(3);
-                    else
-                        PC = GetValueAt(PC + 2, modeTwo);
+                case 6://Jump-if-false: if a == 0 ? Pc = b : Pc += 3
+                    PC = GetValueAt(memoryA) == 0 ? (int)GetValueAt(memoryB) : PC + 3;
                     break;
-                case 7:
-                    Memory[GetValueAt(PC + 3)] = GetValueAt(PC + 1, modeOne) < GetValueAt(PC + 2, modeTwo) ? 1 : 0;
-                    IncrementProgramCounter(4);
+                case 7: //Less than: if a < b ? c = 1 : c = 0 
+                    Memory[memoryC] = GetValueAt(memoryA) < GetValueAt(memoryB) ? 1 : 0;
+                    PC += 4;
                     break;
-                case 8:
-                    Memory[GetValueAt(PC + 3)] = GetValueAt(PC + 1, modeOne) == GetValueAt(PC + 2, modeTwo) ? 1 : 0;
-                    IncrementProgramCounter(4);
+                case 8: //Equals: if a == b ? c = 1 : c = 0
+                    Memory[memoryC] = GetValueAt(memoryA) == GetValueAt(memoryB) ? 1 : 0;
+                    PC += 4;
                     break;
-                case 99:
-                    IncrementProgramCounter(1);
+                case 9: //Adjust Relative base: RelativeBase = a
+                    RelativeBase += (int)GetValueAt(memoryA);
+                    PC += 2;
+                    break;
+                case 99: //Halt
                     return false;
                 default:
                     throw new Exception($"OpCode: '{opCode}' is not implemented yet");
             }
             return true;
-        }
-
-        private void IncrementProgramCounter(int increment)
-        {
-            PC = PC + increment;
         }
     }
 }

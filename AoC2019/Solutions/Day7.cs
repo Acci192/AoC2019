@@ -8,29 +8,29 @@ namespace AoC2019.Solutions
     {
         public static string A(string input)
         {
-            var program = input.Split(',').Select(int.Parse).ToList();
-            var max = 0;
+            var program = input.Split(',').Select(long.Parse).ToList();
+            var max = 0L;
             var settings = UniquePhaseSettings(0, 4);
 
             foreach (var setting in settings)
             {
-                var computerA = new IntCodeComputer(program);
+                var computerA = new IntCodeComputer(program, 0);
                 computerA.AddToInput(setting[0], 0);
                 computerA.Run();
 
-                var computerB = new IntCodeComputer(program);
+                var computerB = new IntCodeComputer(program, 0);
                 computerB.AddToInput(setting[1], computerA.OutputQueue.Take());
                 computerB.Run();
 
-                var computerC = new IntCodeComputer(program);
+                var computerC = new IntCodeComputer(program, 0);
                 computerC.AddToInput(setting[2], computerB.OutputQueue.Take());
                 computerC.Run();
 
-                var computerD = new IntCodeComputer(program);
+                var computerD = new IntCodeComputer(program, 0);
                 computerD.AddToInput(setting[3], computerC.OutputQueue.Take());
                 computerD.Run();
 
-                var computerE = new IntCodeComputer(program);
+                var computerE = new IntCodeComputer(program, 0);
                 computerE.AddToInput(setting[4], computerD.OutputQueue.Take());
                 computerE.Run();
 
@@ -44,17 +44,17 @@ namespace AoC2019.Solutions
 
         public static string B(string input)
         {
-            var program = input.Split(',').Select(int.Parse).ToList();
-            var max = 0;
+            var program = input.Split(',').Select(long.Parse).ToList();
+            var max = 0L;
             var settings = UniquePhaseSettings(5, 9);
 
             foreach(var setting in settings)
             {
-                var computerA = new IntCodeComputer(program);
-                var computerB = new IntCodeComputer(program) { InputQueue = computerA.OutputQueue };
-                var computerC = new IntCodeComputer(program) { InputQueue = computerB.OutputQueue };
-                var computerD = new IntCodeComputer(program) { InputQueue = computerC.OutputQueue };
-                var computerE = new IntCodeComputer(program) { InputQueue = computerD.OutputQueue };
+                var computerA = new IntCodeComputer(program, 10);
+                var computerB = new IntCodeComputer(program, 10) { InputQueue = computerA.OutputQueue };
+                var computerC = new IntCodeComputer(program, 10) { InputQueue = computerB.OutputQueue };
+                var computerD = new IntCodeComputer(program, 10) { InputQueue = computerC.OutputQueue };
+                var computerE = new IntCodeComputer(program, 10) { InputQueue = computerD.OutputQueue };
                 computerA.InputQueue = computerE.OutputQueue;
                 computerA.AddToInput(setting[0], 0);
                 computerB.AddToInput(setting[1]);
