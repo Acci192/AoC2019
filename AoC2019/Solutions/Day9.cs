@@ -20,7 +20,7 @@ namespace AoC2019.Solutions
         public static string B(string input)
         {
             var program = input.Split(',').Select(long.Parse).ToList();
-            var computer = new IntCodeComputer(program);
+            var computer = new IntCodeComputer(program, loggingEnabled: IntCodeComputer.LogLevel.Info);
             computer.AddToInput(2);
             computer.Run();
             return computer.OutputQueue.Take().ToString();
