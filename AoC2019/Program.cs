@@ -7,7 +7,7 @@ namespace AoC2019
     {
         static void Main(string[] args)
         {
-            Func<string, string> methodToRun = Day11.A;
+            Func<string, string> methodToRun = Day11.B;
             var input = System.IO.File.ReadAllText($"../../Inputs/{methodToRun.Method.DeclaringType?.Name}.txt");
 
             var result = methodToRun(input);
