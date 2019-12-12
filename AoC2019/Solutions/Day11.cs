@@ -2,10 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using System.Windows;
 
 namespace AoC2019.Solutions
 {
@@ -34,8 +31,7 @@ namespace AoC2019.Solutions
             var computerThread = new Thread(f => { computer.Run(); });
             var programThread = new Thread(f => { HandleLogic(computer.InputQueue, computer.OutputQueue); });
 
-            paintedPanels = new Dictionary<(int, int), int>();
-            paintedPanels[(0, 0)] = 1;
+            paintedPanels = new Dictionary<(int, int), int> { [(0, 0)] = 1 };
             computerThread.Start();
             programThread.Start();
             computerThread.Join();
