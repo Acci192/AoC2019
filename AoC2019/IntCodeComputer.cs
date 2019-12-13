@@ -107,6 +107,7 @@ namespace AoC2019
                     break;
                 case 3: // Read: a = [input]
                     Memory[memoryA] = InputQueue.Take();
+                    //Memory[memoryA] = int.Parse(Console.ReadLine());
                     PC += 2;
                     break;
                 case 4: // Write: [output] = a
