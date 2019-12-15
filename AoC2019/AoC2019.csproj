@@ -21,6 +21,9 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -30,6 +33,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -60,6 +64,8 @@
     <Compile Include="Solutions\Day11.cs" />
     <Compile Include="Solutions\Day12.cs" />
     <Compile Include="Solutions\Day13.cs" />
+    <Compile Include="Solutions\Day14.cs" />
+    <Compile Include="Solutions\Day15.cs" />
     <Compile Include="Solutions\Day2.cs" />
     <Compile Include="Solutions\Day1.cs" />
     <Compile Include="Solutions\Day3.cs" />
@@ -80,6 +86,8 @@
     <Content Include="Inputs\Day11.txt" />
     <Content Include="Inputs\Day12.txt" />
     <Content Include="Inputs\Day13.txt" />
+    <Content Include="Inputs\Day14.txt" />
+    <Content Include="Inputs\Day15.txt" />
     <Content Include="Inputs\Day3.txt" />
     <Content Include="Inputs\Day2.txt" />
     <Content Include="Inputs\Day1.txt" />
