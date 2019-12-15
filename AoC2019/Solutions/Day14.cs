@@ -9,7 +9,8 @@ namespace AoC2019.Solutions
 {
     public class Day14
     {
-        public static long UsedOre = 0;
+        // Don't Look. This needs major cleaning
+        public static BigInteger UsedOre = 0;
         public static string A(string input)
         {
             UsedOre = 0;
@@ -70,7 +71,8 @@ namespace AoC2019.Solutions
         {
             UsedOre = 0;
             var rows = input.Replace("\r", "").Split('\n');
-            var recipes = new List<Recipe>();
+
+            var ingredients = new List<Ingredient>();
 
             foreach (var row in rows)
             {
@@ -80,88 +82,130 @@ namespace AoC2019.Solutions
                 var toInfo = split[1].Split(new[] { " " }, StringSplitOptions.RemoveEmptyEntries);
                 var toNode = toInfo[1];
                 var toAmount = int.Parse(toInfo[0]);
-
-                var recipe = new Recipe(toNode, toAmount);
-
+                var recipe = new Recipe(toAmount);
                 foreach (var from in froms)
                 {
                     var fromInfo = from.Split(new[] { " " }, StringSplitOptions.RemoveEmptyEntries);
                     var fromNode = fromInfo[1];
                     var fromAmount = int.Parse(fromInfo[0]);
-                    recipe.Ingredients.Add((fromNode, fromAmount));
+                    recipe.RequiredIngredients[fromNode] = fromAmount;
                 }
-                recipes.Add(recipe);
+
+                ingredients.Add(new Ingredient(toNode, recipe));
             }
+            var baseIngredients = ingredients.Where(x => x.Recipe.RequiredIngredients.Where(y => y.Key == "ORE").Count() == 1).ToList();
+            baseIngredients.ForEach(x => x.CalculateDependencies(0, ingredients));
 
+            
+            ingredients = ingredients.OrderByDescending(x => x.Dependencies).ToList();
 
-            var result = NeededOre(1, recipes);
-            return result.ToString();
+            ingredients.First(x => x.Name == "FUEL").RequiredAmount = 1;
+            ingredients.ForEach(x => x.ProduceRequiredIngredients(ingredients));
+            ingredients.ForEach(x => x.ClearRequired());
+            
+
+            var target = 1000000000000;
+            var min = target / UsedOre;
+            var max = target + new BigInteger(100000000);
+            var increment = min / 2;
+            
+            while (min < max)
+            {
+                ingredients.ForEach(x => x.ClearRequired());
+                UsedOre = 0;
+                var mid = (min + max) / 2;
+
+                ingredients.First(x => x.Name == "FUEL").RequiredAmount = mid;
+                ingredients.ForEach(x => x.ProduceRequiredIngredients(ingredients));
+                if (UsedOre > target)
+                    max = mid;
+                else if (UsedOre < target)
+                {
+                    if (mid == min)
+                        break;
+                    min = mid;
+                }
+                else
+                {
+                    min = mid;
+                    break;
+                }
+            }
+            return min.ToString();
         }
 
-        public static int NeededOre(int amountOfFuel, List<Recipe> recipes)
+        public class Ingredient
         {
-            var neededAmount = recipes.Select(x => x.Type).ToDictionary(x => x, x => 0);
+            public string Name { get; set; }
+            public BigInteger RequiredAmount { get; set; }
+            public int Dependencies { get; set; } = 0;
+            public Recipe Recipe { get; set; }
 
-            var leftOvers = recipes.Select(x => x.Type).ToDictionary(x => x, x => 0);
-
-            neededAmount["FUEL"] = amountOfFuel;
-
-            var usedOre = 0;
-            while(neededAmount.Any(x => x.Value > 0))
+            public Ingredient(string name, Recipe recipe)
             {
-                var neededRecipe = neededAmount.FirstOrDefault(x => x.Value > 0);
-                usedOre += UpdateRequirements(neededRecipe.Key, neededRecipe.Value, recipes, neededAmount, leftOvers);
-            }
-            return usedOre;
-        }
-
-        public static int UpdateRequirements(string type, int amount, List<Recipe> recipes, Dictionary<string, int> neededAmounts, Dictionary<string, int> leftOvers)
-        {
-            if (type == "ORE")
-                return amount;
-            
-            if (leftOvers[type] >= amount)
-            {
-                neededAmounts[type] -= amount;
-                leftOvers[type] -= amount;
-                return 0;
-            }
-            else if (leftOvers[type] > 0)
-            {
-                amount = amount - leftOvers[type];
-                leftOvers[type] = 0;
+                Name = name;
+                Recipe = recipe;
             }
             
-            var recipe = recipes.First(x => x.Type == type);
-            var numOfReps = (int)Math.Ceiling((double)amount / recipe.Amount);
-            leftOvers[type] = (recipe.Amount - amount - leftOvers[type]) % recipe.Amount;
-            neededAmounts[type] = 0;
-            foreach (var i in recipe.Ingredients)
+            public void ClearRequired()
             {
-                if (i.Item1 == "ORE")
-                    return i.Item2;
-                    
-                neededAmounts[i.Item1] = i.Item2 * numOfReps;
+                RequiredAmount = 0;
             }
-            
-            return 0;
+
+            public void ProduceIngredient(BigInteger amount, List<Ingredient> ingredients)
+            {
+                var numReps = (int)Math.Ceiling((double)amount / Recipe.Output);
+                
+                foreach (var i in Recipe.RequiredIngredients)
+                {
+                    if (i.Key == "ORE")
+                    {
+                        UsedOre += i.Value * numReps;
+                        return;
+                    }
+                        
+                    var ingredient = ingredients.First(x => x.Name == i.Key);
+                    ingredient.RequiredAmount += i.Value * numReps;
+                }  
+            }
+
+            public void ProduceRequiredIngredients(List<Ingredient> ingredients)
+            {
+                var numReps = new BigInteger(0);
+                if (RequiredAmount % Recipe.Output == 0)
+                    numReps = RequiredAmount / Recipe.Output;
+                else
+                    numReps = RequiredAmount / Recipe.Output + 1;
+
+                foreach (var i in Recipe.RequiredIngredients)
+                {
+                    if (i.Key == "ORE")
+                    {
+                        UsedOre += new BigInteger(i.Value) * numReps;
+                        return;
+                    }
+
+                    var ingredient = ingredients.First(x => x.Name == i.Key);
+                    ingredient.RequiredAmount += new BigInteger(i.Value) * numReps;
+                }
+            }
+
+            public void CalculateDependencies(int stage, List<Ingredient> ingredients)
+            {
+                Dependencies = Math.Max(stage + 1, Dependencies);
+                var baseIngredients = ingredients.Where(x => x.Recipe.RequiredIngredients.Where(y => y.Key == Name).Count() == 1).ToList();
+                baseIngredients.ForEach(x => x.CalculateDependencies(Dependencies, ingredients));
+            }
         }
 
         public class Recipe
         {
-            public string Type { get; set; }
-            public int Amount { get; set; }
-            public List<(string, int)> Ingredients { get; set; } = new List<(string, int)>();
+            public int Output { get; set; }
+            public Dictionary<string, int> RequiredIngredients { get; set; } = new Dictionary<string, int>();
 
-            public Recipe(string type, int amount)
+            public Recipe(int output)
             {
-                Type = type;
-                Amount = amount;
-            }
-
-            public override string ToString()
-            {
-                return $"Type: {Type}, Amount: {Amount}, NumIngredients: {Ingredients.Count}";
+                Output = output;
             }
         }
 
@@ -185,5 +229,6 @@ namespace AoC2019.Solutions
                 return $"From: {From}, FromAmount: {FromAmount}, To: {To}, ToAmount: {ToAmount}";
             }
         }
+
     }
 }
