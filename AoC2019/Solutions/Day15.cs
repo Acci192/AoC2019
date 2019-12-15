@@ -20,7 +20,7 @@ namespace AoC2019.Solutions
             var program = input.Split(',').Select(long.Parse).ToList();
             var computer = new IntCodeComputer(program);
             var computerThread = new Thread(f => { computer.Run(); });
-            var programThread = new Thread(f => { HandleLogic(computer.InputQueue, computer.OutputQueue); });
+            var programThread = new Thread(f => { HandleLogic(computer.InputQueue, computer.OutputQueue, false); });
             DeadEnds.Clear();
 
 
@@ -35,11 +35,9 @@ namespace AoC2019.Solutions
             {
                 for(var x = 0; x < Width; x++)
                 {
-                    Console.Write(Grid[x, y]);
                     if (Grid[x, y] == '.')
                         openPaths++;
                 }
-                Console.WriteLine();
             }
 
             var result = openPaths - DeadEnds.Count;
@@ -51,7 +49,7 @@ namespace AoC2019.Solutions
             var program = input.Split(',').Select(long.Parse).ToList();
             var computer = new IntCodeComputer(program);
             var computerThread = new Thread(f => { computer.Run(); });
-            var programThread = new Thread(f => { HandleLogic(computer.InputQueue, computer.OutputQueue); });
+            var programThread = new Thread(f => { HandleLogic(computer.InputQueue, computer.OutputQueue, true); });
             DeadEnds.Clear();
 
 
@@ -74,14 +72,6 @@ namespace AoC2019.Solutions
                 oxygenFront = newFront;
                 count++;
             }
-            //for (var y = 0; y < Height; y++)
-            //{
-            //    for (var x = 0; x < Width; x++)
-            //    {
-            //        Console.Write(Grid[x, y]);
-            //    }
-            //    Console.WriteLine();
-            //}
             return (count-1).ToString();
         }
 
@@ -114,7 +104,7 @@ namespace AoC2019.Solutions
             }
         }
 
-        private static void HandleLogic(BlockingCollection<long> inputQueue, BlockingCollection<long> outputQueue)
+        private static void HandleLogic(BlockingCollection<long> inputQueue, BlockingCollection<long> outputQueue, bool fullSearch)
         {
             var x = Width / 2;
             var y = Height / 2;
@@ -181,38 +171,17 @@ namespace AoC2019.Solutions
                                 x += 1;
                                 break;
                         }
-                        OxygenTank = (x, y);
-                        break;
-                        //case 2:
-                        //    Grid[x, y] = '.';
-                        //    switch (direction)
-                        //    {
-                        //        case 1:
-                        //            y -= 1;
-                        //            break;
-                        //        case 2:
-                        //            y += 1;
-                        //            break;
-                        //        case 3:
-                        //            x -= 1;
-                        //            break;
-                        //        case 4:
-                        //            x += 1;
-                        //            break;
-                        //    }
-                        //    Grid[x, y] = 'O';
-                        //    return;
+                        if (fullSearch)
+                        {
+                            OxygenTank = (x, y);
+                            break;
+                        }
+                        else
+                        {
+                            Grid[x, y] = 'O';
+                            return;
+                        }  
                 }
-                //Grid[x, y] = 'o';
-                //for (var yTemp = 0; yTemp < Height; yTemp++)
-                //{
-                //    for (var xTemp = 0; xTemp < Width; xTemp++)
-                //    {
-                //        Console.Write(Grid[xTemp, yTemp]);
-                //    }
-                //    Console.WriteLine();
-                //}
-                //Console.WriteLine("############################");
             }
         }
 
@@ -226,8 +195,7 @@ namespace AoC2019.Solutions
                 return 2;
             if (Grid[x-1, y] == default(char))
                 return 3;
-
-            UpdateDeadEnds(x, y);
+            
             var options = GetOptions(x, y);
             if (options.Count > 1)
                 return options.First(o => o != lastDirection);
@@ -239,16 +207,6 @@ namespace AoC2019.Solutions
 
         private static List<int> GetOptions(int x, int y)
         {
-            //var options = new List<int>();
-            //if (Grid[x, y - 1] == '.')
-            //    options.Add(1);
-            //if (Grid[x + 1, y] == '.')
-            //    options.Add(4);
-            //if (Grid[x, y + 1] == '.')
-            //    options.Add(2);
-            //if (Grid[x - 1, y] == '.')
-            //    options.Add(3);
-
             var options = new List<int>();
             var north = (x, y: y - 1);
             var east = (x: x + 1, y);
@@ -262,26 +220,10 @@ namespace AoC2019.Solutions
                 options.Add(2);
             if (Grid[west.x, west.y] == '.' && !DeadEnds.Contains(west))
                 options.Add(3);
-            return options;
-        }
-        private static void UpdateDeadEnds(int x, int y)
-        {
-            var options = new List<int>();
-            var north = (x, y: y - 1);
-            var east = (x: x + 1, y);
-            var south = (x, y: y +1);
-            var west = (x: x - 1, y);
-            if (Grid[north.x, north.y] == '#' || DeadEnds.Contains(north))
-                options.Add(1);
-            if (Grid[east.x, east.y] == '#' || DeadEnds.Contains(east))
-                options.Add(4);
-            if (Grid[south.x, south.y] == '#' || DeadEnds.Contains(south))
-                options.Add(2);
-            if (Grid[west.x, west.y] == '#' || DeadEnds.Contains(west))
-                options.Add(3);
 
-            if (options.Count >= 3)
+            if (options.Count == 1)
                 DeadEnds.Add((x, y));
+            return options;
         }
     }
 }

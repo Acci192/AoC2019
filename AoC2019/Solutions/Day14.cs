@@ -9,7 +9,7 @@ namespace AoC2019.Solutions
 {
     public class Day14
     {
-        // Don't Look. This needs major cleaning
+        // Don't Look. This needs major cleaning. 
         public static BigInteger UsedOre = 0;
         public static string A(string input)
         {
