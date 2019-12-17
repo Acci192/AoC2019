@@ -133,6 +133,7 @@ namespace AoC2019
                     PC += 2;
                     break;
                 case 99: //Halt
+                    OutputQueue.Add(long.MinValue);
                     return false;
                 default:
                     throw new Exception($"OpCode: '{opCode}' is not implemented yet");

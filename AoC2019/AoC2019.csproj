@@ -84,7 +84,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Inputs\Day 17.txt" />
+    <Content Include="Inputs\Day17.txt" />
     <Content Include="Inputs\Day10.txt" />
     <Content Include="Inputs\Day11.txt" />
     <Content Include="Inputs\Day12.txt" />
